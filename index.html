@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+
   <title>Mako Personalplaner</title>
 
   <meta name="theme-color" content="#ffffff">
@@ -16,7 +17,8 @@
   <link rel="apple-touch-icon" href="./mako-icon-192.png">
 
   <style>
-    html, body {
+    html,
+    body {
       width: 100%;
       height: 100%;
       margin: 0;
@@ -51,38 +53,54 @@
 
     #pushButton {
       position: fixed;
-      right: 14px;
-      bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-      z-index: 9999;
+      right: 16px;
+      bottom: 16px;
+      z-index: 999999;
+
       display: none;
+
       border: 0;
-      border-radius: 999px;
-      padding: 11px 16px;
+      border-radius: 14px;
+
+      padding: 13px 16px;
+
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+
       background: #111827;
       color: #ffffff;
-      font: 700 14px/1.2 Arial, sans-serif;
-      box-shadow: 0 6px 22px rgba(0,0,0,.20);
+
+      box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.20);
+
       cursor: pointer;
     }
 
     #pushButton:disabled {
-      opacity: .65;
+      opacity: 0.65;
       cursor: default;
     }
   </style>
-
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js"></script>
 </head>
 
 <body>
+
   <div class="fallback">
     <div>
-      <strong>Mako Personalplaner</strong><br><br>
+      <strong>Mako Personalplaner</strong>
+      <br><br>
+
       Falls die App nicht lädt:
-      <a href="https://script.google.com/macros/s/AKfycbwmWUMS8xv989OHGPNeqAtENmUdLUAeVZUUVieThSbBQcFbtPfFEJETToLpViYuGkXn/exec">direkt öffnen</a>
+
+      <a
+        href="https://script.google.com/macros/s/AKfycbwmWUMS8xv989OHGPNeqAtENmUdLUAeVZUUVieThSbBQcFbtPfFEJETToLpViYuGkXn/exec"
+      >
+        direkt öffnen
+      </a>
     </div>
   </div>
+
 
   <iframe
     id="app"
@@ -91,158 +109,334 @@
     allow="clipboard-read; clipboard-write"
   ></iframe>
 
-  <button id="pushButton" type="button">🔔 Benachrichtigungen aktivieren</button>
+
+  <button
+    id="pushButton"
+    type="button"
+  >
+    🔔 Benachrichtigungen aktivieren
+  </button>
+
+
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js"></script>
+
 
   <script>
     const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyD834l6nojbMm0_As_82mkQ9lfah9p1EDk",
-  authDomain: "mako-personalplaner.firebaseapp.com",
-  projectId: "mako-personalplaner",
-  storageBucket: "mako-personalplaner.firebasestorage.app",
-  messagingSenderId: "606569515655",
-  appId: "1:606569515655:web:fc90bc032679ad8f814622"
-};
-    const VAPID_KEY = "BNxTtWe7mJ7Xrpz7u-MmRYmEz8raYyWlgg-JiM8GhauGznsy26_x9NjEUNRGM2koEn6hGbM9y4YRakGvKWgQ3Sc";
+      apiKey: "AIzaSyD834l6nojbMm0_As_82mkQ9lfah9p1EDk",
+      authDomain: "mako-personalplaner.firebaseapp.com",
+      projectId: "mako-personalplaner",
+      storageBucket: "mako-personalplaner.firebasestorage.app",
+      messagingSenderId: "606569515655",
+      appId: "1:606569515655:web:fc90bc032679ad8f814622"
+    };
 
-    const appFrame = document.getElementById("app");
-    const pushButton = document.getElementById("pushButton");
 
-    let currentUsername = "";
-    let swRegistration = null;
-    let messaging = null;
+    const VAPID_KEY =
+      "BNxTtWe7mJ7Xrpz7u-MmRYmEz8raYyWlgg-JiM8GhauGznsy26_x9NjEUNRGM2koEn6hGbM9y4YRakGvKWgQ3Sc";
 
-    firebase.initializeApp(FIREBASE_CONFIG);
-    messaging = firebase.messaging();
 
-    async function setupServiceWorker() {
-      if (!("serviceWorker" in navigator)) {
-        return null;
-      }
+    const appFrame =
+      document.getElementById("app");
 
-      swRegistration = await navigator.serviceWorker.register("./service-worker.js");
-      await navigator.serviceWorker.ready;
-      return swRegistration;
-    }
+
+    const pushButton =
+      document.getElementById("pushButton");
+
+
+    let currentUsername =
+      "";
+
+
+    let serviceWorkerRegistration =
+      null;
+
+
+    let messaging =
+      null;
+
+
+    firebase.initializeApp(
+      FIREBASE_CONFIG
+    );
+
+
+    messaging =
+      firebase.messaging();
+
 
     function updatePushButton() {
+
       if (!currentUsername) {
-        pushButton.style.display = "none";
+        pushButton.style.display =
+          "none";
+
         return;
       }
+
 
       if (!("Notification" in window)) {
-        pushButton.style.display = "none";
+        pushButton.style.display =
+          "none";
+
         return;
       }
 
-      if (Notification.permission === "granted") {
-        pushButton.style.display = "none";
-        registerCurrentDevice().catch(console.error);
+
+      if (
+        Notification.permission ===
+        "granted"
+      ) {
+        pushButton.style.display =
+          "none";
+
         return;
       }
 
-      if (Notification.permission === "denied") {
-        pushButton.style.display = "none";
-        return;
-      }
 
-      pushButton.style.display = "block";
+      pushButton.style.display =
+        "block";
     }
 
+
     async function registerCurrentDevice() {
+
       if (!currentUsername) {
         return;
       }
 
-      if (!swRegistration) {
-        swRegistration = await setupServiceWorker();
-      }
 
-      if (!swRegistration || Notification.permission !== "granted") {
+      if (!serviceWorkerRegistration) {
+        console.warn(
+          "Service Worker noch nicht bereit."
+        );
+
         return;
       }
 
-      const token = await messaging.getToken({
-        vapidKey: VAPID_KEY,
-        serviceWorkerRegistration: swRegistration
-      });
-
-      if (!token) {
-        throw new Error("Kein FCM-Token erhalten.");
-      }
-
-      appFrame.contentWindow.postMessage(
-        {
-          type: "MAKO_PUSH_TOKEN",
-          username: currentUsername,
-          token: token,
-          platform: navigator.userAgent || ""
-        },
-        "*"
-      );
-    }
-
-    pushButton.addEventListener("click", async () => {
-      pushButton.disabled = true;
-      pushButton.textContent = "🔔 Wird aktiviert …";
 
       try {
-        const permission = await Notification.requestPermission();
 
-        if (permission !== "granted") {
-          pushButton.style.display = "none";
+        const token =
+          await messaging.getToken({
+            vapidKey:
+              VAPID_KEY,
+
+            serviceWorkerRegistration:
+              serviceWorkerRegistration
+          });
+
+
+        if (!token) {
+          console.warn(
+            "Kein Firebase Push-Token erhalten."
+          );
+
           return;
         }
 
-        await registerCurrentDevice();
 
-        pushButton.style.display = "none";
-      } catch (err) {
-        console.error("Push-Aktivierung fehlgeschlagen:", err);
-        pushButton.disabled = false;
-        pushButton.textContent = "🔔 Benachrichtigungen aktivieren";
+        appFrame.contentWindow.postMessage(
+          {
+            type:
+              "MAKO_PUSH_TOKEN",
+
+            username:
+              currentUsername,
+
+            token:
+              token,
+
+            platform:
+              navigator.userAgent || ""
+          },
+          "*"
+        );
+
+
+        pushButton.style.display =
+          "none";
+
+      } catch (error) {
+
+        console.error(
+          "Push-Registrierung fehlgeschlagen:",
+          error
+        );
       }
-    });
+    }
 
-    window.addEventListener("message", event => {
-      const data = event.data || {};
 
-      if (data.type === "MAKO_USER_LOGIN") {
-        currentUsername = String(data.username || "").trim();
-        updatePushButton();
+    pushButton.addEventListener(
+      "click",
+      async function() {
+
+        pushButton.disabled =
+          true;
+
+
+        try {
+
+          const permission =
+            await Notification.requestPermission();
+
+
+          if (
+            permission ===
+            "granted"
+          ) {
+
+            await registerCurrentDevice();
+
+          } else {
+
+            alert(
+              "Benachrichtigungen wurden nicht erlaubt."
+            );
+          }
+
+        } catch (error) {
+
+          console.error(
+            "Benachrichtigungsfreigabe fehlgeschlagen:",
+            error
+          );
+
+        } finally {
+
+          pushButton.disabled =
+            false;
+
+          updatePushButton();
+        }
       }
+    );
 
-      if (data.type === "MAKO_USER_LOGOUT") {
-        currentUsername = "";
-        updatePushButton();
+
+    window.addEventListener(
+      "message",
+      function(event) {
+
+        const data =
+          event.data || {};
+
+
+        if (
+          data.type ===
+          "MAKO_USER_LOGIN"
+        ) {
+
+          currentUsername =
+            String(
+              data.username || ""
+            ).trim();
+
+
+          updatePushButton();
+
+
+          if (
+            "Notification" in window &&
+            Notification.permission ===
+              "granted"
+          ) {
+
+            registerCurrentDevice();
+          }
+        }
+
+
+        if (
+          data.type ===
+          "MAKO_USER_LOGOUT"
+        ) {
+
+          currentUsername =
+            "";
+
+          updatePushButton();
+        }
       }
-    });
+    );
 
-    messaging.onMessage(payload => {
-      if (Notification.permission !== "granted") {
-        return;
+
+    if (
+      "serviceWorker" in navigator
+    ) {
+
+      window.addEventListener(
+        "load",
+        async function() {
+
+          try {
+
+            serviceWorkerRegistration =
+              await navigator.serviceWorker.register(
+                "./service-worker.js"
+              );
+
+
+            await navigator.serviceWorker.ready;
+
+          } catch (error) {
+
+            console.error(
+              "Service Worker konnte nicht registriert werden:",
+              error
+            );
+          }
+        }
+      );
+    }
+
+
+    messaging.onMessage(
+      function(payload) {
+
+        const data =
+          payload.data || {};
+
+
+        const title =
+          data.title ||
+          "Mako Personalplaner";
+
+
+        const body =
+          data.body ||
+          "Neue Mitteilung";
+
+
+        if (
+          serviceWorkerRegistration &&
+          Notification.permission ===
+            "granted"
+        ) {
+
+          serviceWorkerRegistration.showNotification(
+            title,
+            {
+              body:
+                body,
+
+              icon:
+                "./mako-icon-192.png",
+
+              badge:
+                "./mako-icon-192.png",
+
+              data: {
+                url:
+                  data.url ||
+                  "./"
+              }
+            }
+          );
+        }
       }
-
-      const data = payload.data || {};
-      const title = data.title || "Mako Personalplaner";
-      const body = data.body || "Neue Mitteilung";
-      const url = data.url || "./";
-
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.ready.then(registration => {
-          registration.showNotification(title, {
-            body: body,
-            icon: "./mako-icon-192.png",
-            badge: "./mako-icon-192.png",
-            data: { url: url }
-          });
-        });
-      }
-    });
-
-    setupServiceWorker()
-      .then(() => updatePushButton())
-      .catch(err => console.error("Service Worker:", err));
+    );
   </script>
+
 </body>
 </html>
