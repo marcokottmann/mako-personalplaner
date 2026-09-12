@@ -64,12 +64,12 @@
       font-weight: 700;
       background: #111827;
       color: #ffffff;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.20);
+      box-shadow: 0 8px 24px rgba(0,0,0,.20);
       cursor: pointer;
     }
 
     #pushButton:disabled {
-      opacity: 0.65;
+      opacity: .65;
       cursor: default;
     }
   </style>
@@ -84,9 +84,7 @@
 
       Falls die App nicht lädt:
 
-      <a
-        href="https://script.google.com/macros/s/AKfycbwmWUMS8xv989OHGPNeqAtENmUdLUAeVZUUVieThSbBQcFbtPfFEJETToLpViYuGkXn/exec"
-      >
+      <a href="https://script.google.com/macros/s/AKfycbwmWUMS8xv989OHGPNeqAtENmUdLUAeVZUUVieThSbBQcFbtPfFEJETToLpViYuGkXn/exec">
         direkt öffnen
       </a>
     </div>
@@ -99,10 +97,7 @@
     allow="clipboard-read; clipboard-write"
   ></iframe>
 
-  <button
-    id="pushButton"
-    type="button"
-  >
+  <button id="pushButton" type="button">
     🔔 Benachrichtigungen aktivieren
   </button>
 
@@ -122,14 +117,15 @@
     const VAPID_KEY =
       "BNxTtWe7mJ7Xrpz7u-MmRYmEz8raYyWlgg-JiM8GhauGznsy26_x9NjEUNRGM2koEn6hGbM9y4YRakGvKWgQ3Sc";
 
-    const appFrame =
-      document.getElementById("app");
-
     const pushButton =
       document.getElementById("pushButton");
 
     let serviceWorkerRegistration =
       null;
+
+    let makoBridgeWindow =
+      null;
+
 
     firebase.initializeApp(
       FIREBASE_CONFIG
@@ -139,123 +135,9 @@
       firebase.messaging();
 
 
-    async function registerCurrentDevice() {
-
-      if (!serviceWorkerRegistration) {
-        alert(
-          "Der Push-Dienst ist noch nicht bereit. Bitte die App kurz schließen und erneut öffnen."
-        );
-        return;
-      }
-
-      try {
-
-        const token =
-          await messaging.getToken({
-            vapidKey: VAPID_KEY,
-            serviceWorkerRegistration:
-              serviceWorkerRegistration
-          });
-
-        if (!token) {
-          alert(
-            "Es konnte kein Push-Token erstellt werden."
-          );
-          return;
-        }
-
-        appFrame.contentWindow.postMessage(
-          {
-            type: "MAKO_PUSH_TOKEN",
-            token: token,
-            platform:
-              navigator.userAgent || ""
-          },
-          "*"
-        );
-
-      } catch (error) {
-
-        console.error(
-          "Push-Registrierung fehlgeschlagen:",
-          error
-        );
-
-        alert(
-          "Push-Registrierung fehlgeschlagen: " +
-          (
-            error && error.message
-              ? error.message
-              : error
-          )
-        );
-      }
-    }
-
-
-    pushButton.addEventListener(
-      "click",
-      async function() {
-
-        pushButton.disabled =
-          true;
-
-        try {
-
-          if (!("Notification" in window)) {
-            alert(
-              "Dieses Gerät unterstützt Browser-Benachrichtigungen nicht."
-            );
-            return;
-          }
-
-          let permission =
-            Notification.permission;
-
-          if (
-            permission !==
-            "granted"
-          ) {
-
-            permission =
-              await Notification.requestPermission();
-          }
-
-          if (
-            permission !==
-            "granted"
-          ) {
-
-            alert(
-              "Benachrichtigungen wurden nicht erlaubt."
-            );
-
-            return;
-          }
-
-          await registerCurrentDevice();
-
-        } catch (error) {
-
-          console.error(error);
-
-          alert(
-            "Benachrichtigungsfreigabe fehlgeschlagen: " +
-            (
-              error && error.message
-                ? error.message
-                : error
-            )
-          );
-
-        } finally {
-
-          pushButton.disabled =
-            false;
-        }
-      }
-    );
-
+    // ==================================================
+    // VERBINDUNG ZUM EIGENTLICHEN MAKO-FENSTER
+    // ==================================================
 
     window.addEventListener(
       "message",
@@ -263,6 +145,22 @@
 
         const data =
           event.data || {};
+
+        if (
+          data.type ===
+          "MAKO_BRIDGE_READY"
+        ) {
+
+          makoBridgeWindow =
+            event.source;
+
+          console.log(
+            "✅ Mako Push-Brücke verbunden"
+          );
+
+          return;
+        }
+
 
         if (
           data.type ===
@@ -275,7 +173,10 @@
           alert(
             "✅ Benachrichtigungen wurden aktiviert."
           );
+
+          return;
         }
+
 
         if (
           data.type ===
@@ -290,6 +191,174 @@
       }
     );
 
+
+    // ==================================================
+    // PUSH-TOKEN ERSTELLEN
+    // ==================================================
+
+    async function registerCurrentDevice() {
+
+      if (!serviceWorkerRegistration) {
+
+        alert(
+          "Der Push-Dienst ist noch nicht bereit. Bitte die App kurz schließen und erneut öffnen."
+        );
+
+        return;
+      }
+
+
+      if (!makoBridgeWindow) {
+
+        alert(
+          "Die Verbindung zum Mako Personalplaner ist noch nicht bereit. Bitte die App einmal komplett schließen und erneut öffnen."
+        );
+
+        return;
+      }
+
+
+      try {
+
+        const token =
+          await messaging.getToken({
+            vapidKey:
+              VAPID_KEY,
+
+            serviceWorkerRegistration:
+              serviceWorkerRegistration
+          });
+
+
+        if (!token) {
+
+          alert(
+            "Es konnte kein Push-Token erstellt werden."
+          );
+
+          return;
+        }
+
+
+        makoBridgeWindow.postMessage(
+          {
+            type:
+              "MAKO_PUSH_TOKEN",
+
+            token:
+              token,
+
+            platform:
+              navigator.userAgent || ""
+          },
+          "*"
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          "Push-Registrierung fehlgeschlagen:",
+          error
+        );
+
+        alert(
+          "Push-Registrierung fehlgeschlagen: " +
+          (
+            error &&
+            error.message
+              ? error.message
+              : error
+          )
+        );
+      }
+    }
+
+
+    // ==================================================
+    // BUTTON
+    // ==================================================
+
+    pushButton.addEventListener(
+      "click",
+      async function() {
+
+        pushButton.disabled =
+          true;
+
+        try {
+
+          if (
+            !("Notification" in window)
+          ) {
+
+            alert(
+              "Dieses Gerät unterstützt Browser-Benachrichtigungen nicht."
+            );
+
+            return;
+          }
+
+
+          let permission =
+            Notification.permission;
+
+
+          if (
+            permission !==
+            "granted"
+          ) {
+
+            permission =
+              await Notification.requestPermission();
+          }
+
+
+          if (
+            permission !==
+            "granted"
+          ) {
+
+            alert(
+              "Benachrichtigungen wurden nicht erlaubt."
+            );
+
+            return;
+          }
+
+
+          await registerCurrentDevice();
+
+
+        } catch (error) {
+
+          console.error(
+            error
+          );
+
+          alert(
+            "Benachrichtigungsfreigabe fehlgeschlagen: " +
+            (
+              error &&
+              error.message
+                ? error.message
+                : error
+            )
+          );
+
+
+        } finally {
+
+          pushButton.disabled =
+            false;
+        }
+      }
+    );
+
+
+    // ==================================================
+    // SERVICE WORKER
+    // ==================================================
 
     if (
       "serviceWorker" in navigator
@@ -306,7 +375,14 @@
                 "./service-worker.js"
               );
 
+
             await navigator.serviceWorker.ready;
+
+
+            console.log(
+              "✅ Service Worker bereit"
+            );
+
 
           } catch (error) {
 
@@ -320,19 +396,26 @@
     }
 
 
+    // ==================================================
+    // PUSH IM VORDERGRUND
+    // ==================================================
+
     messaging.onMessage(
       function(payload) {
 
         const data =
           payload.data || {};
 
+
         const title =
           data.title ||
           "Mako Personalplaner";
 
+
         const body =
           data.body ||
           "Neue Mitteilung";
+
 
         if (
           serviceWorkerRegistration &&
@@ -343,11 +426,15 @@
           serviceWorkerRegistration.showNotification(
             title,
             {
-              body: body,
+              body:
+                body,
+
               icon:
                 "./mako-icon-192.png",
+
               badge:
                 "./mako-icon-192.png",
+
               data: {
                 url:
                   data.url || "./"
@@ -357,6 +444,7 @@
         }
       }
     );
+
   </script>
 
 </body>
