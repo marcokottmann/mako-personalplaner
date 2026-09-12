@@ -57,11 +57,10 @@
       bottom: 16px;
       z-index: 999999;
 
-      display: none;
+      display: block;
 
       border: 0;
       border-radius: 14px;
-
       padding: 13px 16px;
 
       font-family: Arial, sans-serif;
@@ -71,8 +70,7 @@
       background: #111827;
       color: #ffffff;
 
-      box-shadow:
-        0 8px 24px rgba(0, 0, 0, 0.20);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.20);
 
       cursor: pointer;
     }
@@ -90,17 +88,12 @@
     <div>
       <strong>Mako Personalplaner</strong>
       <br><br>
-
       Falls die App nicht lädt:
-
-      <a
-        href="https://script.google.com/macros/s/AKfycbwmWUMS8xv989OHGPNeqAtENmUdLUAeVZUUVieThSbBQcFbtPfFEJETToLpViYuGkXn/exec"
-      >
+      <a href="https://script.google.com/macros/s/AKfycbwmWUMS8xv989OHGPNeqAtENmUdLUAeVZUUVieThSbBQcFbtPfFEJETToLpViYuGkXn/exec">
         direkt öffnen
       </a>
     </div>
   </div>
-
 
   <iframe
     id="app"
@@ -109,7 +102,6 @@
     allow="clipboard-read; clipboard-write"
   ></iframe>
 
-
   <button
     id="pushButton"
     type="button"
@@ -117,10 +109,8 @@
     🔔 Benachrichtigungen aktivieren
   </button>
 
-
   <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js"></script>
-
 
   <script>
     const FIREBASE_CONFIG = {
@@ -132,35 +122,20 @@
       appId: "1:606569515655:web:fc90bc032679ad8f814622"
     };
 
-
     const VAPID_KEY =
       "BNxTtWe7mJ7Xrpz7u-MmRYmEz8raYyWlgg-JiM8GhauGznsy26_x9NjEUNRGM2koEn6hGbM9y4YRakGvKWgQ3Sc";
-
 
     const appFrame =
       document.getElementById("app");
 
-
     const pushButton =
       document.getElementById("pushButton");
 
+    let currentUsername = "";
+    let serviceWorkerRegistration = null;
+    let messaging = null;
 
-    let currentUsername =
-      "";
-
-
-    let serviceWorkerRegistration =
-      null;
-
-
-    let messaging =
-      null;
-
-
-    firebase.initializeApp(
-      FIREBASE_CONFIG
-    );
-
+    firebase.initializeApp(FIREBASE_CONFIG);
 
     messaging =
       firebase.messaging();
@@ -168,33 +143,9 @@
 
     function updatePushButton() {
 
-      if (!currentUsername) {
-        pushButton.style.display =
-          "none";
-
-        return;
-      }
-
-
-      if (!("Notification" in window)) {
-        pushButton.style.display =
-          "none";
-
-        return;
-      }
-
-
-      if (
-        Notification.permission ===
-        "granted"
-      ) {
-        pushButton.style.display =
-          "none";
-
-        return;
-      }
-
-
+      // TESTVERSION:
+      // Button bleibt sichtbar, damit wir prüfen können,
+      // ob die neue GitHub-Version geladen wird.
       pushButton.style.display =
         "block";
     }
@@ -203,66 +154,62 @@
     async function registerCurrentDevice() {
 
       if (!currentUsername) {
+        alert(
+          "Bitte zuerst im Mako Personalplaner anmelden."
+        );
         return;
       }
-
 
       if (!serviceWorkerRegistration) {
-        console.warn(
-          "Service Worker noch nicht bereit."
+        alert(
+          "Der Push-Dienst ist noch nicht bereit. Bitte die App kurz schließen und erneut öffnen."
         );
-
         return;
       }
-
 
       try {
 
         const token =
           await messaging.getToken({
-            vapidKey:
-              VAPID_KEY,
-
+            vapidKey: VAPID_KEY,
             serviceWorkerRegistration:
               serviceWorkerRegistration
           });
 
-
         if (!token) {
-          console.warn(
-            "Kein Firebase Push-Token erhalten."
+          alert(
+            "Es konnte noch kein Push-Token erstellt werden."
           );
-
           return;
         }
 
-
         appFrame.contentWindow.postMessage(
           {
-            type:
-              "MAKO_PUSH_TOKEN",
-
-            username:
-              currentUsername,
-
-            token:
-              token,
-
+            type: "MAKO_PUSH_TOKEN",
+            username: currentUsername,
+            token: token,
             platform:
               navigator.userAgent || ""
           },
           "*"
         );
 
-
-        pushButton.style.display =
-          "none";
+        alert(
+          "✅ Benachrichtigungen wurden aktiviert."
+        );
 
       } catch (error) {
 
         console.error(
           "Push-Registrierung fehlgeschlagen:",
           error
+        );
+
+        alert(
+          "Push-Registrierung fehlgeschlagen: " +
+          (error && error.message
+            ? error.message
+            : error)
         );
       }
     }
@@ -272,20 +219,21 @@
       "click",
       async function() {
 
-        pushButton.disabled =
-          true;
-
+        pushButton.disabled = true;
 
         try {
+
+          if (!("Notification" in window)) {
+            alert(
+              "Dieses Gerät unterstützt Browser-Benachrichtigungen nicht."
+            );
+            return;
+          }
 
           const permission =
             await Notification.requestPermission();
 
-
-          if (
-            permission ===
-            "granted"
-          ) {
+          if (permission === "granted") {
 
             await registerCurrentDevice();
 
@@ -303,12 +251,13 @@
             error
           );
 
+          alert(
+            "Benachrichtigungsfreigabe fehlgeschlagen."
+          );
+
         } finally {
 
-          pushButton.disabled =
-            false;
-
-          updatePushButton();
+          pushButton.disabled = false;
         }
       }
     );
@@ -321,7 +270,6 @@
         const data =
           event.data || {};
 
-
         if (
           data.type ===
           "MAKO_USER_LOGIN"
@@ -332,38 +280,31 @@
               data.username || ""
             ).trim();
 
-
-          updatePushButton();
-
+          console.log(
+            "Mako Benutzer für Push:",
+            currentUsername
+          );
 
           if (
             "Notification" in window &&
-            Notification.permission ===
-              "granted"
+            Notification.permission === "granted"
           ) {
-
             registerCurrentDevice();
           }
         }
-
 
         if (
           data.type ===
           "MAKO_USER_LOGOUT"
         ) {
 
-          currentUsername =
-            "";
-
-          updatePushButton();
+          currentUsername = "";
         }
       }
     );
 
 
-    if (
-      "serviceWorker" in navigator
-    ) {
+    if ("serviceWorker" in navigator) {
 
       window.addEventListener(
         "load",
@@ -376,8 +317,11 @@
                 "./service-worker.js"
               );
 
-
             await navigator.serviceWorker.ready;
+
+            console.log(
+              "Mako Service Worker bereit."
+            );
 
           } catch (error) {
 
@@ -397,39 +341,28 @@
         const data =
           payload.data || {};
 
-
         const title =
           data.title ||
           "Mako Personalplaner";
-
 
         const body =
           data.body ||
           "Neue Mitteilung";
 
-
         if (
           serviceWorkerRegistration &&
-          Notification.permission ===
-            "granted"
+          Notification.permission === "granted"
         ) {
 
           serviceWorkerRegistration.showNotification(
             title,
             {
-              body:
-                body,
-
-              icon:
-                "./mako-icon-192.png",
-
-              badge:
-                "./mako-icon-192.png",
-
+              body: body,
+              icon: "./mako-icon-192.png",
+              badge: "./mako-icon-192.png",
               data: {
                 url:
-                  data.url ||
-                  "./"
+                  data.url || "./"
               }
             }
           );
