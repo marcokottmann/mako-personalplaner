@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Mako Personalplaner</title>
+
+  <meta name="theme-color" content="#ffffff">
+  <meta name="application-name" content="Mako Personalplaner">
+  <meta name="apple-mobile-web-app-title" content="Mako Personalplaner">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="./mako-icon-192.png">
+  <link rel="apple-touch-icon" href="./mako-icon-192.png">
+
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      background: #f4f6f8;
+      overflow: hidden;
+    }
+
+    #app {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: #f4f6f8;
+    }
+
+    .fallback {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      padding: 24px;
+      text-align: center;
+      z-index: -1;
+    }
+
+    .fallback a {
+      color: #111827;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="fallback">
+    <div>
+      <strong>Mako Personalplaner</strong><br><br>
+      Falls die App nicht lädt:
+      <a href="https://script.google.com/macros/s/AKfycbwmWUMS8xv989OHGPNeqAtENmUdLUAeVZUUVieThSbBQcFbtPfFEJETToLpViYuGkXn/exec">direkt öffnen</a>
+    </div>
+  </div>
+
+  <iframe
+    id="app"
+    title="Mako Personalplaner"
+    src="https://script.google.com/macros/s/AKfycbwmWUMS8xv989OHGPNeqAtENmUdLUAeVZUUVieThSbBQcFbtPfFEJETToLpViYuGkXn/exec"
+    allow="clipboard-read; clipboard-write"
+  ></iframe>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
