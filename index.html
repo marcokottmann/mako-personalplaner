@@ -3,7 +3,6 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-
   <title>Mako Personalplaner</title>
 
   <meta name="theme-color" content="#ffffff">
@@ -56,22 +55,16 @@
       right: 16px;
       bottom: 16px;
       z-index: 999999;
-
       display: block;
-
       border: 0;
       border-radius: 14px;
       padding: 13px 16px;
-
       font-family: Arial, sans-serif;
       font-size: 14px;
       font-weight: 700;
-
       background: #111827;
       color: #ffffff;
-
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.20);
-
       cursor: pointer;
     }
 
@@ -88,8 +81,12 @@
     <div>
       <strong>Mako Personalplaner</strong>
       <br><br>
+
       Falls die App nicht lädt:
-      <a href="https://script.google.com/macros/s/AKfycbwmWUMS8xv989OHGPNeqAtENmUdLUAeVZUUVieThSbBQcFbtPfFEJETToLpViYuGkXn/exec">
+
+      <a
+        href="https://script.google.com/macros/s/AKfycbwmWUMS8xv989OHGPNeqAtENmUdLUAeVZUUVieThSbBQcFbtPfFEJETToLpViYuGkXn/exec"
+      >
         direkt öffnen
       </a>
     </div>
@@ -131,34 +128,18 @@
     const pushButton =
       document.getElementById("pushButton");
 
-    let currentUsername = "";
-    let serviceWorkerRegistration = null;
-    let messaging = null;
+    let serviceWorkerRegistration =
+      null;
 
-    firebase.initializeApp(FIREBASE_CONFIG);
+    firebase.initializeApp(
+      FIREBASE_CONFIG
+    );
 
-    messaging =
+    const messaging =
       firebase.messaging();
 
 
-    function updatePushButton() {
-
-      // TESTVERSION:
-      // Button bleibt sichtbar, damit wir prüfen können,
-      // ob die neue GitHub-Version geladen wird.
-      pushButton.style.display =
-        "block";
-    }
-
-
     async function registerCurrentDevice() {
-
-      if (!currentUsername) {
-        alert(
-          "Bitte zuerst im Mako Personalplaner anmelden."
-        );
-        return;
-      }
 
       if (!serviceWorkerRegistration) {
         alert(
@@ -178,7 +159,7 @@
 
         if (!token) {
           alert(
-            "Es konnte noch kein Push-Token erstellt werden."
+            "Es konnte kein Push-Token erstellt werden."
           );
           return;
         }
@@ -186,16 +167,11 @@
         appFrame.contentWindow.postMessage(
           {
             type: "MAKO_PUSH_TOKEN",
-            username: currentUsername,
             token: token,
             platform:
               navigator.userAgent || ""
           },
           "*"
-        );
-
-        alert(
-          "✅ Benachrichtigungen wurden aktiviert."
         );
 
       } catch (error) {
@@ -207,9 +183,11 @@
 
         alert(
           "Push-Registrierung fehlgeschlagen: " +
-          (error && error.message
-            ? error.message
-            : error)
+          (
+            error && error.message
+              ? error.message
+              : error
+          )
         );
       }
     }
@@ -219,7 +197,8 @@
       "click",
       async function() {
 
-        pushButton.disabled = true;
+        pushButton.disabled =
+          true;
 
         try {
 
@@ -230,34 +209,49 @@
             return;
           }
 
-          const permission =
-            await Notification.requestPermission();
+          let permission =
+            Notification.permission;
 
-          if (permission === "granted") {
+          if (
+            permission !==
+            "granted"
+          ) {
 
-            await registerCurrentDevice();
+            permission =
+              await Notification.requestPermission();
+          }
 
-          } else {
+          if (
+            permission !==
+            "granted"
+          ) {
 
             alert(
               "Benachrichtigungen wurden nicht erlaubt."
             );
+
+            return;
           }
+
+          await registerCurrentDevice();
 
         } catch (error) {
 
-          console.error(
-            "Benachrichtigungsfreigabe fehlgeschlagen:",
-            error
-          );
+          console.error(error);
 
           alert(
-            "Benachrichtigungsfreigabe fehlgeschlagen."
+            "Benachrichtigungsfreigabe fehlgeschlagen: " +
+            (
+              error && error.message
+                ? error.message
+                : error
+            )
           );
 
         } finally {
 
-          pushButton.disabled = false;
+          pushButton.disabled =
+            false;
         }
       }
     );
@@ -272,39 +266,34 @@
 
         if (
           data.type ===
-          "MAKO_USER_LOGIN"
+          "MAKO_PUSH_REGISTERED"
         ) {
 
-          currentUsername =
-            String(
-              data.username || ""
-            ).trim();
+          pushButton.style.display =
+            "none";
 
-          console.log(
-            "Mako Benutzer für Push:",
-            currentUsername
+          alert(
+            "✅ Benachrichtigungen wurden aktiviert."
           );
-
-          if (
-            "Notification" in window &&
-            Notification.permission === "granted"
-          ) {
-            registerCurrentDevice();
-          }
         }
 
         if (
           data.type ===
-          "MAKO_USER_LOGOUT"
+          "MAKO_PUSH_ERROR"
         ) {
 
-          currentUsername = "";
+          alert(
+            data.message ||
+            "Push-Registrierung fehlgeschlagen."
+          );
         }
       }
     );
 
 
-    if ("serviceWorker" in navigator) {
+    if (
+      "serviceWorker" in navigator
+    ) {
 
       window.addEventListener(
         "load",
@@ -318,10 +307,6 @@
               );
 
             await navigator.serviceWorker.ready;
-
-            console.log(
-              "Mako Service Worker bereit."
-            );
 
           } catch (error) {
 
@@ -351,15 +336,18 @@
 
         if (
           serviceWorkerRegistration &&
-          Notification.permission === "granted"
+          Notification.permission ===
+            "granted"
         ) {
 
           serviceWorkerRegistration.showNotification(
             title,
             {
               body: body,
-              icon: "./mako-icon-192.png",
-              badge: "./mako-icon-192.png",
+              icon:
+                "./mako-icon-192.png",
+              badge:
+                "./mako-icon-192.png",
               data: {
                 url:
                   data.url || "./"
